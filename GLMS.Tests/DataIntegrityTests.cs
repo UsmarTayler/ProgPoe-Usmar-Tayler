@@ -131,7 +131,7 @@ namespace GLMS.Tests
         {
             _client.DefaultRequestHeaders.Authorization = null;
 
-            var body     = JsonSerializer.Serialize(new { username = "admin", password = "Admin@123" });
+            var body     = JsonSerializer.Serialize(new { username = "admin", password = "Admin123!" });
             var content  = new StringContent(body, Encoding.UTF8, "application/json");
             var response = await _client.PostAsync("/api/auth/login", content);
 
