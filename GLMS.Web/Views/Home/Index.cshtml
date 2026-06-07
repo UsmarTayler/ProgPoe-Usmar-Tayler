@@ -1,0 +1,80 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<h2 class="mb-4"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</h2>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-users me-2"></i>Clients</h5>
+                <h2 class="display-6 fw-bold">@ViewBag.TotalClients</h2>
+                <a href="/Clients" class="text-white-50 small">View all →</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-file-contract me-2"></i>Active Contracts</h5>
+                <h2 class="display-6 fw-bold">@ViewBag.ActiveContracts</h2>
+                <span class="text-white-50 small">of @ViewBag.TotalContracts total</span>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-tasks me-2"></i>Service Requests</h5>
+                <h2 class="display-6 fw-bold">@ViewBag.TotalServiceRequests</h2>
+                <a href="/ServiceRequests" class="text-white-50 small">View all →</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning">
+            <div class="card-body">
+                <h5 class="card-title"><i class="fas fa-clock me-2"></i>Pending Requests</h5>
+                <h2 class="display-6 fw-bold">@ViewBag.PendingRequests</h2>
+                <span class="text-white-50 small">awaiting processing</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><i class="fas fa-info-circle me-2"></i>System Architecture</div>
+            <div class="card-body">
+                <h6>Design Patterns Implemented (from Part 1)</h6>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        <span class="badge bg-primary me-2">Factory</span>
+                        <strong>Factory Method</strong> — LocalContractFactory &amp; InternationalContractFactory
+                    </li>
+                    <li class="list-group-item">
+                        <span class="badge bg-success me-2">Strategy</span>
+                        <strong>Strategy Pattern</strong> — FinancialProcessor with UsdToZarStrategy
+                    </li>
+                    <li class="list-group-item">
+                        <span class="badge bg-warning text-dark me-2">Observer</span>
+                        <strong>Observer Pattern</strong> — ServiceRequestObserver + FinanceObserver
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header"><i class="fas fa-rocket me-2"></i>Quick Actions</div>
+            <div class="card-body d-flex flex-column gap-2">
+                <a href="/Clients/Create" class="btn btn-outline-primary"><i class="fas fa-plus me-2"></i>Add New Client</a>
+                <a href="/Contracts/Create" class="btn btn-outline-success"><i class="fas fa-plus me-2"></i>Create New Contract</a>
+                <a href="/ServiceRequests/Create" class="btn btn-outline-info"><i class="fas fa-plus me-2"></i>New Service Request</a>
+                <a href="/Contracts" class="btn btn-outline-secondary"><i class="fas fa-search me-2"></i>Search Contracts</a>
+            </div>
+        </div>
+    </div>
+</div>

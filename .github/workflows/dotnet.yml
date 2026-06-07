@@ -1,0 +1,56 @@
+# ============================================================
+# GitHub Actions CI Workflow — GLMS (Global Logistics Management System)
+# Student: Tayler Usmar | ST10445063 | PROG7311 POE Part 2
+#
+# WHAT THIS DOES:
+# Every time code is pushed to GitHub (or a Pull Request is opened),
+# this workflow automatically:
+#   1. Sets up a .NET 8 build environment on GitHub's servers
+#   2. Restores all NuGet packages (like dotnet restore)
+#   3. Builds the entire solution
+#   4. Runs all 20 xUnit tests and reports pass/fail
+#
+# WHY THIS MATTERS:
+# This is Continuous Integration (CI) — a professional practice where
+# every code change is automatically verified. If a test breaks, GitHub
+# will show a red X on the commit so you know immediately.
+# ============================================================
+
+name: Build and Test GLMS
+
+# Trigger: runs on every push to any branch, and on pull requests
+on:
+  push:
+    branches: [ "**" ]
+  pull_request:
+    branches: [ "**" ]
+
+jobs:
+  build-and-test:
+    # GitHub hosts a free Windows runner — matches our Windows/LocalDB dev environment
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1: Check out the repository code onto the runner
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Step 2: Install .NET 8 SDK on the GitHub runner
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      # Step 3: Restore all NuGet packages (EF Core, xUnit, etc.)
+      - name: Restore NuGet packages
+        run: dotnet restore GLMS.sln
+
+      # Step 4: Build the entire solution (both GLMS.Web and GLMS.Tests)
+      - name: Build solution
+        run: dotnet build GLMS.sln --no-restore --configuration Release
+
+      # Step 5: Run all xUnit tests and output results
+      # --no-build skips rebuilding since we just built above
+      # --verbosity normal shows each test name and pass/fail result
+      - name: Run unit tests
+        run: dotnet test GLMS.Tests/GLMS.Tests.csproj --no-build --configuration Release --verbosity normal

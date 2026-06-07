@@ -1,0 +1,52 @@
+# ============================================================
+# Dockerfile for GLMS.Web (the MVC frontend)
+# Student: Tayler Usmar | ST10445063 | PROG7311 POE Part 3
+#
+# WHAT THIS FILE DOES:
+# Builds a Docker image for the GLMS.Web MVC project.
+# In Part 3, GLMS.Web no longer connects to the database —
+# it only connects to GLMS.Api (the backend container).
+#
+# WHY THIS IS DIFFERENT FROM PART 2:
+# Part 2: GLMS.Web → SQL Server (direct)
+# Part 3: GLMS.Web → GLMS.Api → SQL Server (SOA)
+#
+# This container is the "Presentation Layer" — it only serves
+# HTML/CSS/JS pages and calls the API for all data.
+# ============================================================
+
+# ============================================================
+# STAGE 1: BUILD
+# ============================================================
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy project files for dependency restore
+COPY GLMS.Shared/GLMS.Shared.csproj GLMS.Shared/
+COPY GLMS.Web/GLMS.Web.csproj       GLMS.Web/
+
+RUN dotnet restore GLMS.Web/GLMS.Web.csproj
+
+# Copy source code
+COPY GLMS.Shared/ GLMS.Shared/
+COPY GLMS.Web/    GLMS.Web/
+
+RUN dotnet publish GLMS.Web/GLMS.Web.csproj \
+    --no-restore \
+    --configuration Release \
+    --output /app/publish
+
+# ============================================================
+# STAGE 2: RUNTIME
+# ============================================================
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+COPY --from=build /app/publish .
+
+EXPOSE 8080
+
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+ENTRYPOINT ["dotnet", "GLMS.Web.dll"]

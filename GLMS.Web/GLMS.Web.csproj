@@ -1,0 +1,54 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>GLMS.Web</RootNamespace>
+  </PropertyGroup>
+
+  <!--
+    PART 3 CHANGE: EF Core packages removed.
+    GLMS.Web no longer connects to the database directly.
+    All data access is done via HttpClient calls to GLMS.Api.
+
+    GLMS.Shared is referenced so that Razor views can use
+    the shared model types (Client, Contract, ServiceRequest, Enums).
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GLMS.Shared\GLMS.Shared.csproj" />
+  </ItemGroup>
+
+  <!--
+    Exclude Part 2 files that depend on EF Core (those features moved to GLMS.Api).
+    The files are kept on disk so the git history shows the Part 2 → Part 3 evolution,
+    but they are excluded from the Part 3 build.
+  -->
+  <!--
+    Exclude Part 2 files that depend on EF Core or duplicate types now in GLMS.Shared.
+    Models\** is excluded because Client, Contract, ServiceRequest, and all enums
+    moved to GLMS.Shared in Part 3. Keeping them compiled here would create two
+    ContractStatus / ServiceLevel / etc. types in scope and cause CS0266 errors
+    in the Razor views. The files are kept on disk for git history.
+  -->
+  <!--
+    All Part 2 files that reference EF Core or GLMS.Web.Models are excluded here.
+    They are kept on disk so the git history shows the Part 2 → Part 3 evolution,
+    but they are not compiled in the Part 3 build.
+    - Data\**        : ApplicationDbContext (EF Core, moved concept to GLMS.Api)
+    - Migrations\**  : EF migrations (no longer used — GLMS.Api owns the DB)
+    - Models\**      : Client, Contract, ServiceRequest, Enums (moved to GLMS.Shared)
+    - Patterns\**    : Factory, Observer, Strategy (moved to GLMS.Api)
+  -->
+  <ItemGroup>
+    <Compile Remove="Data/**" />
+    <Compile Remove="Migrations/**" />
+    <Compile Remove="Models/**" />
+    <Compile Remove="Patterns/**" />
+  </ItemGroup>
+
+</Project>

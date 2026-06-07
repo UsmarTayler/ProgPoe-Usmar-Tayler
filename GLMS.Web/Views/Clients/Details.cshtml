@@ -1,0 +1,57 @@
+@model GLMS.Shared.Models.Client
+@{
+    ViewData["Title"] = "Client Details";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-user me-2"></i>@Model.Name</h2>
+    <div>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">Contact Details</div>
+            <div class="card-body">
+                <p><strong>Email:</strong> @Model.Email</p>
+                <p><strong>Phone:</strong> @Model.Phone</p>
+                <p><strong>Region:</strong> @Model.Region</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                Contracts (@Model.Contracts.Count)
+                <a asp-controller="Contracts" asp-action="Create" class="btn btn-sm btn-primary float-end">+ New Contract</a>
+            </div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead>
+                        <tr><th>#</th><th>Type</th><th>Status</th><th>Start</th><th>End</th><th>Requests</th></tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var c in Model.Contracts)
+                        {
+                            <tr>
+                                <td>@c.Id</td>
+                                <td>@c.ContractType</td>
+                                <td><span class="badge badge-@c.Status bg-secondary">@c.Status</span></td>
+                                <td>@c.StartDate.ToString("dd MMM yyyy")</td>
+                                <td>@c.EndDate.ToString("dd MMM yyyy")</td>
+                                <td>@c.ServiceRequests.Count</td>
+                            </tr>
+                        }
+                        @if (!Model.Contracts.Any())
+                        {
+                            <tr><td colspan="6" class="text-center text-muted">No contracts yet.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

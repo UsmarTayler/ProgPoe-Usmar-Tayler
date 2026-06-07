@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "GLMS.Web": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:59424;http://localhost:59425"
+    }
+  }
+}

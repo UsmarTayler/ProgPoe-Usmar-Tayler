@@ -1,0 +1,75 @@
+@model GLMS.Shared.Models.Contract
+@{
+    ViewData["Title"] = "Edit Contract";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header bg-warning">
+                <h5 class="mb-0"><i class="fas fa-edit me-2"></i>Edit Contract #@Model.Id</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning small">
+                    <i class="fas fa-bell me-2"></i>
+                    <strong>Observer Pattern:</strong> If you change the Status to <em>Expired</em> or <em>OnHold</em>,
+                    the system will automatically cancel all Pending Service Requests for this contract.
+                </div>
+
+                <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                    <input type="hidden" asp-for="Id" />
+                    <input type="hidden" asp-for="ContractType" />
+
+                    <div class="mb-3">
+                        <label asp-for="ClientId" class="form-label fw-bold">Client</label>
+                        <select asp-for="ClientId" class="form-select" asp-items="ViewBag.Clients"></select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label asp-for="Status" class="form-label fw-bold">Status</label>
+                            <select asp-for="Status" class="form-select"
+                                    asp-items="Html.GetEnumSelectList<ContractStatus>()"></select>
+                        </div>
+                        <div class="col-md-6">
+                            <label asp-for="ServiceLevel" class="form-label fw-bold">Service Level</label>
+                            <select asp-for="ServiceLevel" class="form-select"
+                                    asp-items="Html.GetEnumSelectList<ServiceLevel>()"></select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Start Date</label>
+                            <input type="date" name="StartDate" class="form-control"
+                                   value="@Model.StartDate.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">End Date</label>
+                            <input type="date" name="EndDate" class="form-control"
+                                   value="@Model.EndDate.ToString("yyyy-MM-dd")" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold"><i class="fas fa-file-pdf me-1 text-danger"></i>Upload New Agreement (PDF)</label>
+                        @if (!string.IsNullOrEmpty(Model.SignedAgreementPath))
+                        {
+                            <div class="mb-2">
+                                <span class="text-success small"><i class="fas fa-check me-1"></i>Current file: @Model.SignedAgreementOriginalName</span>
+                                <a asp-action="DownloadAgreement" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-success ms-2">Download</a>
+                            </div>
+                        }
+                        <input type="file" name="signedAgreement" class="form-control" accept=".pdf" />
+                        <small class="text-muted">Leave blank to keep the existing file. Only .pdf allowed.</small>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-warning"><i class="fas fa-save me-2"></i>Update Contract</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

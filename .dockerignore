@@ -1,0 +1,13 @@
+# Exclude Windows build artifacts that contain machine-specific paths.
+# Without this, Docker copies the obj/ folders from your Windows machine into
+# the Linux container. Those obj/ folders contain project.assets.json files
+# with Windows-only paths (e.g. C:\Program Files\...\NuGetPackages) baked in,
+# which causes NuGet to crash with "Unable to find fallback package folder".
+# By excluding obj/ and bin/, dotnet restore inside Docker generates fresh
+# Linux-compatible paths and publish succeeds.
+
+**/obj/
+**/bin/
+**/.vs/
+**/*.user
+**/build-log.txt

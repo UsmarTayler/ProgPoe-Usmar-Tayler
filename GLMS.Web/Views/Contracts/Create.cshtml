@@ -1,0 +1,102 @@
+@{
+    ViewData["Title"] = "Create Contract";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-file-contract me-2"></i>Create New Contract</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info small">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Factory Method Pattern:</strong> Selecting "Local" or "International" routes to the appropriate
+                    concrete factory (LocalContractFactory / InternationalContractFactory), which sets the ContractType
+                    and default properties automatically.
+                </div>
+
+                <!-- multipart/form-data required for file uploads -->
+                <form asp-action="Create" method="post" enctype="multipart/form-data">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Client</label>
+                        <select name="clientId" class="form-select" required>
+                            <option value="">— Select Client —</option>
+                            @foreach (var item in (Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.Clients)
+                            {
+                                <option value="@item.Value">@item.Text</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Contract Type</label>
+                            <select name="contractType" class="form-select" required>
+                                @foreach (var item in (Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.ContractTypes)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            </select>
+                            <small class="text-muted">Determines which Factory is used</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Service Level</label>
+                            <select name="serviceLevel" class="form-select" required>
+                                @foreach (var item in (Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.ServiceLevels)
+                                {
+                                    <option value="@item.Value">@item.Text</option>
+                                }
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Start Date</label>
+                            <input type="date" name="startDate" class="form-control"
+                                   value="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">End Date</label>
+                            <input type="date" name="endDate" class="form-control"
+                                   value="@DateTime.Today.AddYears(1).ToString("yyyy-MM-dd")" required />
+                        </div>
+                    </div>
+
+                    <!-- PDF UPLOAD — marking criteria: file handling -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-file-pdf me-1 text-danger"></i>Signed Agreement (PDF only)
+                        </label>
+                        <input type="file" name="signedAgreement" class="form-control" accept=".pdf" />
+                        <small class="text-muted">Only .pdf files are accepted. Files are saved with a unique UUID name.</small>
+                        <span class="text-danger small" id="fileError"></span>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success"><i class="fas fa-save me-2"></i>Create Contract</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    // Client-side validation: only allow PDF
+    document.querySelector('input[type=file]').addEventListener('change', function () {
+        const file = this.files[0];
+        const error = document.getElementById('fileError');
+        if (file && !file.name.toLowerCase().endsWith('.pdf')) {
+            error.textContent = 'Only .pdf files are allowed!';
+            this.value = '';
+        } else {
+            error.textContent = '';
+        }
+    });
+</script>
+}

@@ -1,0 +1,69 @@
+# ============================================================
+# Dockerfile for GLMS.Api (the Web API backend)
+# Student: Tayler Usmar | ST10445063 | PROG7311 POE Part 3
+#
+# WHAT THIS FILE DOES:
+# Builds a Docker image for the GLMS.Api project using a
+# two-stage build:
+#   Stage 1 (build): Uses the full .NET 8 SDK to compile the app.
+#   Stage 2 (runtime): Uses the lightweight ASP.NET runtime image
+#                      to run the compiled app. Final image is ~250MB
+#                      instead of ~850MB.
+#
+# WHY TWO STAGES?
+# The SDK image contains compilers, debuggers, and tooling we only
+# need during build. The runtime image is much smaller, which means
+# faster deployments and a smaller attack surface in production.
+# ============================================================
+
+# ============================================================
+# STAGE 1: BUILD
+# Base image: full .NET 8 SDK (needed to compile)
+# ============================================================
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copy project files first (for Docker layer caching).
+# If these files don't change, Docker reuses the cached restore layer,
+# saving time on repeated builds.
+COPY GLMS.Shared/GLMS.Shared.csproj       GLMS.Shared/
+COPY GLMS.Api/GLMS.Api.csproj             GLMS.Api/
+
+# Restore NuGet packages (same as 'dotnet restore' locally)
+RUN dotnet restore GLMS.Api/GLMS.Api.csproj
+
+# Copy the full source code
+COPY GLMS.Shared/ GLMS.Shared/
+COPY GLMS.Api/    GLMS.Api/
+
+# Build and publish in Release mode
+# --no-restore: skip restore since we already did it above
+# /app/publish: output folder for the compiled binaries
+RUN dotnet publish GLMS.Api/GLMS.Api.csproj \
+    --no-restore \
+    --configuration Release \
+    --output /app/publish
+
+# ============================================================
+# STAGE 2: RUNTIME
+# Base image: lightweight ASP.NET 8 runtime (no SDK)
+# ============================================================
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Copy compiled output from the build stage
+COPY --from=build /app/publish .
+
+# Create the uploads directory for PDF files
+# This matches the path used in FileValidationService.SavePdfAsync()
+RUN mkdir -p /app/wwwroot/uploads && chmod 777 /app/wwwroot/uploads
+
+# Expose port 8080 (ASP.NET Core default in Docker)
+EXPOSE 8080
+
+# Set environment variable for ASP.NET Core to listen on port 8080
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Start the API
+ENTRYPOINT ["dotnet", "GLMS.Api.dll"]

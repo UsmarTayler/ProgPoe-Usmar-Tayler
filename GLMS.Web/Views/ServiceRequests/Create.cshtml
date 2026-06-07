@@ -1,0 +1,106 @@
+@model GLMS.Shared.Models.ServiceRequest
+@{
+    ViewData["Title"] = "New Service Request";
+    var rate = (decimal)ViewBag.ExchangeRate;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>New Service Request</h5>
+            </div>
+            <div class="card-body">
+
+                <!-- Live Exchange Rate Banner -->
+                <div class="alert alert-success">
+                    <i class="fas fa-exchange-alt me-2"></i>
+                    <strong>Live Exchange Rate</strong> (from ExchangeRate-API):
+                    <span class="fw-bold fs-5">1 USD = R<span id="liveRate">@rate.ToString("F4")</span></span>
+                    <small class="text-muted ms-2">(fetched via HttpClient at page load)</small>
+                </div>
+
+                <!-- Workflow Rule Warning -->
+                <div class="alert alert-warning small">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Workflow Rule:</strong> Only contracts with status <em>Active</em> or <em>Draft</em>
+                    are shown below. Expired or OnHold contracts are blocked (business rule enforcement).
+                </div>
+
+                <div asp-validation-summary="All" class="alert alert-danger"></div>
+
+                <form asp-action="Create" method="post">
+                    <input type="hidden" id="hiddenRate" name="ExchangeRateUsed" value="@rate" />
+
+                    <div class="mb-3">
+                        <label asp-for="ContractId" class="form-label fw-bold">Contract</label>
+                        <select asp-for="ContractId" class="form-select" asp-items="ViewBag.Contracts">
+                            <option value="">— Select Contract —</option>
+                        </select>
+                        <span asp-validation-for="ContractId" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Description" class="form-label fw-bold"></label>
+                        <textarea asp-for="Description" class="form-control" rows="3"
+                                  placeholder="Describe the service being requested..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="CostUSD" class="form-label fw-bold">Cost in USD ($)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input asp-for="CostUSD" class="form-control" type="number" step="0.01" min="0.01"
+                                   id="costUsd" placeholder="0.00"
+                                   oninput="calculateZar()" />
+                        </div>
+                        <span asp-validation-for="CostUSD" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Auto-calculated ZAR (Strategy Pattern: FinancialProcessor.Process()) -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Auto-Calculated Cost in ZAR (R)</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R</span>
+                            <input type="text" class="form-control bg-light" id="costZarDisplay" readonly
+                                   placeholder="Calculated automatically..." />
+                            <input type="hidden" asp-for="CostZAR" id="costZarHidden" />
+                        </div>
+                        <small class="text-muted">
+                            Calculated using FinancialProcessor + UsdToZarStrategy (Strategy Pattern)
+                        </small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Status" class="form-label fw-bold">Initial Status</label>
+                        <select asp-for="Status" class="form-select" asp-items="ViewBag.StatusOptions">
+                        </select>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-info text-white"><i class="fas fa-save me-2"></i>Submit Request</button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const rate = parseFloat(document.getElementById('hiddenRate').value) || @rate;
+
+    function calculateZar() {
+        const usd = parseFloat(document.getElementById('costUsd').value) || 0;
+        // Mirrors the Strategy Pattern: FinancialProcessor.Process(amount, rate)
+        const zar = (usd * rate).toFixed(2);
+        document.getElementById('costZarDisplay').value = zar;
+        document.getElementById('costZarHidden').value = zar;
+    }
+
+    // Run once on load in case form was re-displayed after validation error
+    calculateZar();
+</script>
+}

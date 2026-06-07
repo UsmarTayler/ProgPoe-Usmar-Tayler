@@ -1,0 +1,26 @@
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Build outputs
+**/bin/
+**/obj/
+
+# NuGet
+*.nupkg
+**/packages/
+
+# Logs
+*.log
+
+# Docker
+build-log.txt
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Uploads (test PDFs - not needed in repo)
+GLMS.Web/wwwroot/uploads/
+GLMS.Api/wwwroot/uploads/

@@ -1,0 +1,82 @@
+@model GLMS.Shared.Models.Contract
+@{
+    ViewData["Title"] = $"Contract #{Model.Id}";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-file-contract me-2"></i>Contract #@Model.Id</h2>
+    <div>
+        <a asp-action="Edit" asp-route-id="@Model.Id" class="btn btn-warning">Edit</a>
+        <a asp-action="Index" class="btn btn-outline-secondary">Back</a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header">Contract Details</div>
+            <div class="card-body">
+                <p><strong>Client:</strong> @Model.Client?.Name</p>
+                <p><strong>Type:</strong> <span class="badge bg-info text-dark">@Model.ContractType</span></p>
+                <p><strong>Status:</strong>
+                    @{
+                        var color = Model.Status switch {
+                            ContractStatus.Active => "success", ContractStatus.Expired => "danger",
+                            ContractStatus.OnHold => "warning", _ => "secondary"
+                        };
+                    }
+                    <span class="badge bg-@color">@Model.Status</span>
+                </p>
+                <p><strong>Service Level:</strong> @Model.ServiceLevel</p>
+                <p><strong>Start:</strong> @Model.StartDate.ToString("dd MMMM yyyy")</p>
+                <p><strong>End:</strong> @Model.EndDate.ToString("dd MMMM yyyy")</p>
+                @if (!string.IsNullOrEmpty(Model.SignedAgreementPath))
+                {
+                    <p>
+                        <strong>Signed Agreement:</strong>
+                        <a asp-action="DownloadAgreement" asp-route-id="@Model.Id" class="btn btn-sm btn-outline-success">
+                            <i class="fas fa-download me-1"></i>@Model.SignedAgreementOriginalName
+                        </a>
+                    </p>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                Service Requests (@Model.ServiceRequests.Count)
+                @if (Model.Status == ContractStatus.Active || Model.Status == ContractStatus.Draft)
+                {
+                    <a asp-controller="ServiceRequests" asp-action="Create" asp-route-contractId="@Model.Id"
+                       class="btn btn-sm btn-primary">+ New Request</a>
+                }
+                else
+                {
+                    <span class="badge bg-danger">Requests blocked — contract @Model.Status</span>
+                }
+            </div>
+            <div class="card-body p-0">
+                <table class="table mb-0">
+                    <thead><tr><th>#</th><th>Description</th><th>Cost (USD)</th><th>Cost (ZAR)</th><th>Status</th></tr></thead>
+                    <tbody>
+                        @foreach (var sr in Model.ServiceRequests)
+                        {
+                            <tr>
+                                <td>@sr.Id</td>
+                                <td>@sr.Description</td>
+                                <td>$@(sr.CostUSD.ToString("F2"))</td>
+                                <td>R@(sr.CostZAR.ToString("F2"))</td>
+                                <td><span class="badge bg-secondary">@sr.Status</span></td>
+                            </tr>
+                        }
+                        @if (!Model.ServiceRequests.Any())
+                        {
+                            <tr><td colspan="5" class="text-center text-muted">No service requests.</td></tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

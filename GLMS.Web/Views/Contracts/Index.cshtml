@@ -1,0 +1,104 @@
+@model IEnumerable<GLMS.Shared.Models.Contract>
+@{
+    ViewData["Title"] = "Contracts";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-file-contract me-2"></i>Contracts</h2>
+    <a asp-action="Create" class="btn btn-success"><i class="fas fa-plus me-2"></i>New Contract</a>
+</div>
+
+<!-- SEARCH / FILTER PANEL (LINQ Search — marking criteria) -->
+<div class="card mb-4">
+    <div class="card-header bg-light">
+        <i class="fas fa-search me-2"></i>Search & Filter
+    </div>
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="statusFilter" class="form-select">
+                    <option value="">— All Statuses —</option>
+                    @foreach (var s in (Microsoft.AspNetCore.Mvc.Rendering.SelectList)ViewBag.StatusOptions)
+                    {
+                        <option value="@s.Value" selected="@(s.Value == ViewBag.StatusFilter)">@s.Text</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Start Date From</label>
+                <input type="date" name="startFrom" class="form-control" value="@ViewBag.StartFrom" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Start Date To</label>
+                <input type="date" name="startTo" class="form-control" value="@ViewBag.StartTo" />
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-search me-1"></i>Search</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <table class="table table-hover mb-0">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Client</th>
+                    <th>Type</th>
+                    <th>Status</th>
+                    <th>Service Level</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Agreement</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in Model)
+                {
+                    var statusColor = c.Status switch {
+                        ContractStatus.Active  => "success",
+                        ContractStatus.Draft   => "secondary",
+                        ContractStatus.Expired => "danger",
+                        ContractStatus.OnHold  => "warning",
+                        _                      => "secondary"
+                    };
+                    <tr>
+                        <td>@c.Id</td>
+                        <td>@c.Client?.Name</td>
+                        <td><span class="badge bg-info text-dark">@c.ContractType</span></td>
+                        <td><span class="badge bg-@statusColor">@c.Status</span></td>
+                        <td>@c.ServiceLevel</td>
+                        <td>@c.StartDate.ToString("dd MMM yyyy")</td>
+                        <td>@c.EndDate.ToString("dd MMM yyyy")</td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(c.SignedAgreementPath))
+                            {
+                                <a asp-action="DownloadAgreement" asp-route-id="@c.Id" class="btn btn-sm btn-outline-success">
+                                    <i class="fas fa-download me-1"></i>PDF
+                                </a>
+                            }
+                            else
+                            {
+                                <span class="text-muted small">None</span>
+                            }
+                        </td>
+                        <td>
+                            <a asp-action="Details" asp-route-id="@c.Id" class="btn btn-sm btn-outline-info">Details</a>
+                            <a asp-action="Edit" asp-route-id="@c.Id" class="btn btn-sm btn-outline-warning">Edit</a>
+                            <a asp-action="Delete" asp-route-id="@c.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                        </td>
+                    </tr>
+                }
+                @if (!Model.Any())
+                {
+                    <tr><td colspan="9" class="text-center text-muted py-4">No contracts found. <a asp-action="Create">Create one.</a></td></tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>

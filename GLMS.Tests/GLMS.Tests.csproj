@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="xunit" Version="2.6.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="6.0.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <!--
+      Part 3: Integration Testing support.
+      WebApplicationFactory spins up an in-memory GLMS.Api server for testing.
+    -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.4" />
+    <!--
+      Part 3: In-memory database for Create→Read data integrity tests.
+      Replaces SQL Server with an isolated EF Core in-memory store per test run.
+    -->
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Part 3: Reference GLMS.Api only (not GLMS.Web).
+      The unit tests (CurrencyCalculation, FileValidation) now use GLMS.Api namespaces
+      because the Patterns and Services moved to GLMS.Api in the SOA refactor.
+      WebApplicationFactory<Program> needs GLMS.Api to find the entry point.
+    -->
+    <ProjectReference Include="..\GLMS.Api\GLMS.Api.csproj" />
+    <ProjectReference Include="..\GLMS.Shared\GLMS.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

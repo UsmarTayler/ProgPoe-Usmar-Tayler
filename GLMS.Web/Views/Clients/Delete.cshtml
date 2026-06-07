@@ -1,0 +1,32 @@
+@model GLMS.Shared.Models.Client
+@{
+    ViewData["Title"] = "Delete Client";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="fas fa-trash me-2"></i>Delete Client</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Are you sure you want to delete <strong>@Model.Name</strong>?
+                    @if (Model.Contracts.Any())
+                    {
+                        <span class="d-block mt-2 text-danger">
+                            This client has <strong>@Model.Contracts.Count</strong> contract(s).
+                            Deletion is blocked if contracts exist (foreign key restriction).
+                        </span>
+                    }
+                </div>
+                <form asp-action="Delete" method="post">
+                    <input type="hidden" asp-for="Id" />
+                    <button type="submit" class="btn btn-danger me-2">Yes, Delete</button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
