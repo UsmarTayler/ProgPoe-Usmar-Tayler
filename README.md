@@ -1,174 +1,219 @@
 # GLMS – Global Logistics Management System
-### Part 2 Submission – Core Prototype & Unit Testing
-**ASP.NET Core MVC · EF Core · SQL Server · xUnit · External API**
+### Part 3 Submission – SOA, Docker & Automated Integration Testing
+**ASP.NET Core Web API · ASP.NET Core MVC · EF Core · SQL Server · Docker · xUnit**
 
 ---
 
-## 📌 Overview
+## Overview
 
-The **Global Logistics Management System (GLMS)** is a monolithic ASP.NET Core MVC web application built for TechMove Logistics. It serves as the functional prototype for the enterprise system designed in Part 1, translating the architecture and UML diagrams directly into working C# code.
+Part 3 evolves the Part 2 monolithic prototype into a **Service-Oriented Architecture (SOA)**. The single MVC application has been split into three independently deployable components that communicate over HTTP and run together via Docker Compose.
 
-The system includes:
+| Component | Technology | Purpose |
+|-----------|-----------|---------|
+| `GLMS.Api` | ASP.NET Core Web API | Business logic, database access, REST endpoints |
+| `GLMS.Web` | ASP.NET Core MVC | Presentation layer — calls the API via HttpClient |
+| `sql-server-db` | MS SQL Server 2022 | Persistent data store (API only — Web has no DB access) |
 
-- Full client, contract, and service request management
-- All three Gang of Four design patterns from Part 1 (Factory, Strategy, Observer)
-- Live USD → ZAR currency conversion via external API
-- PDF signed agreement upload and download
-- LINQ-based contract search and filter
-- Workflow business rules (status validation)
-- 20 xUnit unit tests covering currency math and file validation
+All three containers are orchestrated by a single `docker-compose.yml` and communicate over an internal Docker bridge network.
 
 ---
 
-## 🚀 How to Run
+## Quick Start (Docker)
+
+> Requires: Docker Desktop running
+
+```bash
+docker compose up --build
+```
+
+| URL | What it is |
+|-----|-----------|
+| `http://localhost:5000` | GLMS MVC Frontend |
+| `http://localhost:5001/swagger` | API Swagger UI |
+
+**Login:** `admin` / `Admin@123`
+
+To stop:
+```bash
+docker compose down
+```
+
+---
+
+## Run Locally (Without Docker)
 
 ### Requirements
 - Visual Studio 2022
 - .NET 8 SDK
-- SQL Server LocalDB (included with Visual Studio)
-- EF Core Tools
+- SQL Server LocalDB
 
----
-
-### 1. Database Setup
-
-Open **Package Manager Console** (Tools → NuGet Package Manager → PMC):
+### 1. Start the API
 
 ```
-Add-Migration InitialCreate
-Update-Database
+cd GLMS.Api
+dotnet run
 ```
 
-This will create:
+API runs at `http://localhost:5001`. Swagger available at `/swagger`.
 
-- Clients table
-- Contracts table (with SignedAgreementPath for PDF uploads)
-- ServiceRequests table (with CostUSD, CostZAR, ExchangeRateUsed)
+### 2. Start the Web App
 
----
+```
+cd GLMS.Web
+dotnet run
+```
 
-### 2. Run the Application
-
-1. Open **GLMS.sln** in Visual Studio 2022
-2. Set **GLMS.Web** as the startup project
-3. Press **F5**
-4. The app opens at `https://localhost:[port]/`
+Web runs at `http://localhost:5000`. Reads `ApiBaseUrl` from `appsettings.Development.json` (set to `http://localhost:5001`).
 
 ---
 
-## 📋 Features (Rubric Aligned)
+## Architecture
 
-## 1️⃣ Database Architecture – EF Core (10 Marks)
+```
+┌─────────────────────────────────────────────────────────┐
+│                    Docker Network: glms-network          │
+│                                                         │
+│  ┌──────────────┐   HTTP    ┌──────────────┐            │
+│  │  GLMS.Web    │ ────────► │  GLMS.Api    │            │
+│  │  (MVC)       │           │  (Web API)   │            │
+│  │  :5000       │           │  :5001       │            │
+│  └──────────────┘           └──────┬───────┘            │
+│                                    │ SQL                 │
+│                              ┌─────▼──────┐             │
+│                              │ SQL Server │             │
+│                              │  :1433     │             │
+│                              └────────────┘             │
+└─────────────────────────────────────────────────────────┘
+```
 
-- Fully normalised schema with 3 related tables
-- Fluent API configuration (relationships, decimal precision, enum-as-string)
-- One-to-Many: Client → Contracts → ServiceRequests
-- Connection string in `appsettings.json` — not hardcoded
-- Foreign key constraints with Restrict and Cascade delete rules
-
----
-
-## 2️⃣ Design Pattern Implementation – From Part 1 UML (20 Marks)
-
-### Factory Method
-- `IContractFactory`, `LocalContractFactory`, `InternationalContractFactory`
-- `ContractFactoryResolver` selects the correct factory based on user selection
-- Controller never creates contracts directly — the factory handles it
-
-### Strategy Pattern
-- `ICurrencyStrategy`, `UsdToZarStrategy`, `EurToZarStrategy`
-- `FinancialProcessor` holds and delegates to the active strategy
-- Swappable at runtime — adding a new currency requires zero existing code changes
-
-### Observer Pattern
-- `ContractStatusSubject` maintains a list of observers
-- `ServiceRequestObserver` auto-cancels Pending requests when contract Expires or goes OnHold
-- `FinanceObserver` logs a finance audit alert on every status change
-- Both observers fire automatically from one line in the controller
+**Key architectural decisions:**
+- `GLMS.Web` has **zero database dependency** — no DbContext, no EF Core, no connection string
+- All business logic and DB access lives in `GLMS.Api`
+- The Web frontend communicates with the API exclusively via `ApiService` (typed `HttpClient`)
+- JWT authentication is issued by the API and forwarded by the Web on every request
+- Design patterns (Factory, Strategy, Observer) were moved to `GLMS.Api`
 
 ---
 
-## 3️⃣ Workflow & Validation Logic 
-- Service Requests **cannot** be created if the parent contract is `Expired` or `OnHold`
-- Validated at UI level (only eligible contracts appear in dropdown)
-- Validated at server level (POST action re-checks status even if UI is bypassed)
-- Observer Pattern retroactively cancels Pending requests when a contract's status changes
+## REST API Endpoints
+
+All endpoints (except `/api/auth/login`) require a `Bearer` JWT token.
+
+| Verb | Endpoint | Description |
+|------|----------|-------------|
+| POST | `/api/auth/login` | Returns JWT token |
+| GET | `/api/clients` | List all clients |
+| GET | `/api/clients/{id}` | Get client by ID |
+| POST | `/api/clients` | Create client — returns 201 |
+| PUT | `/api/clients/{id}` | Update client — returns 204 |
+| DELETE | `/api/clients/{id}` | Delete client — returns 204 or 409 |
+| GET | `/api/contracts` | List contracts (optional filters: status, startFrom, startTo) |
+| GET | `/api/contracts/{id}` | Get contract with client and service requests |
+| POST | `/api/contracts` | Create contract (multipart, supports PDF) — returns 201 |
+| PUT | `/api/contracts/{id}` | Update contract — returns 204 |
+| PATCH | `/api/contracts/{id}/status` | Update status only — fires Observer Pattern |
+| DELETE | `/api/contracts/{id}` | Delete contract — returns 204 |
+| GET | `/api/contracts/{id}/download` | Download signed agreement PDF |
+| GET | `/api/servicerequests` | List all service requests |
+| GET | `/api/servicerequests/{id}` | Get service request by ID |
+| POST | `/api/servicerequests` | Create service request — Strategy Pattern applies CostZAR |
+| PATCH | `/api/servicerequests/{id}/status` | Update status |
+| DELETE | `/api/servicerequests/{id}` | Delete service request |
+| GET | `/api/servicerequests/rate` | Current USD→ZAR exchange rate |
+| GET | `/api/dashboard` | Aggregated stats (totalClients, totalContracts, etc.) |
 
 ---
 
-## 4️⃣ File Handling – PDF Uploads 
+## Automated Integration Tests
 
-- PDF validation checks **both** file extension and MIME content type
-- Files saved with UUID prefix to prevent overwrite collisions
-- Stored in `wwwroot/uploads/` (simulated file server)
-- Download link available on the Contracts index and details pages
+Tests are in `GLMS.Tests/`. Run them with:
 
----
+```bash
+dotnet test GLMS.Tests/GLMS.Tests.csproj --verbosity normal
+```
 
-## 5️⃣ External API Integration – Currency Conversion 
+Tests use `WebApplicationFactory<Program>` with an in-memory database — **no SQL Server required**.
 
-- Fetches live USD → ZAR rate from `https://open.er-api.com/v6/latest/USD`
-- No API key required — free tier
-- Rate displayed on ServiceRequest creation page
-- ZAR field auto-calculates as user types the USD amount (JavaScript)
-- Rate re-fetched server-side on POST for security
-- Fallback rate of 18.75 used if API is unavailable
-- Uses `async/await` with `HttpClient` (LU4 — Optimising Application Performance)
+### ApiIntegrationTests.cs (13 tests)
 
----
+| Test | What it verifies |
+|------|-----------------|
+| `Get_WithoutToken_Returns401Unauthorized` (x4) | All protected endpoints reject unauthenticated requests |
+| `Login_WithValidCredentials_Returns200AndToken` | Login returns 200 and a non-empty JWT token |
+| `Login_WithInvalidCredentials_Returns401` (x3) | Wrong credentials return 401 |
+| `GetContracts_WithValidToken_Returns200AndJsonArray` | Authenticated GET returns 200 + JSON array |
+| `GetClients_WithValidToken_Returns200` | Authenticated GET /api/clients returns 200 |
+| `GetServiceRequests_WithValidToken_Returns200` | Authenticated GET /api/servicerequests returns 200 |
+| `GetDashboard_WithValidToken_Returns200WithStats` | Dashboard returns all expected JSON fields |
+| `GetRate_WithValidToken_ReturnsPositiveRate` | Exchange rate endpoint returns a positive number |
 
-## 🧪 Unit Tests 
+### DataIntegrityTests.cs (8 tests)
 
-Unit tests are in the **GLMS.Tests** project.
-
-To run: Open **Test Explorer** → **Run All Tests**
-
-All 20 tests should pass (green).
-
-### CurrencyCalculationTests (9 tests)
-- Correct USD → ZAR conversion math
-- Decimal rounding to 2 places
-- Zero amount edge case
-- Invalid rate throws `ArgumentException`
-- Strategy swap at runtime
-- Parameterised `[Theory]` with `[InlineData]`
-
-### FileValidationTests (11 tests)
-- PDF accepted
-- `.exe` rejected
-- `.docx` and `.jpg` rejected
-- MIME type spoofing detected and rejected
-- Null and empty filename handling
-- Case-insensitive extension check (`.PDF` accepted)
-- Parameterised `[Theory]` with 7 file types
+| Test | What it verifies |
+|------|-----------------|
+| `CreateClient_ThenRead_DataMatchesExactly` | All fields survive the Create→Read round-trip |
+| `CreateContract_ThenRead_DataMatchesExactly` | FK integrity + Factory Pattern field integrity |
+| `CreateServiceRequest_ThenRead_DataMatchesAndStrategyRan` | Strategy Pattern proof: CostZAR > CostUSD |
+| `CreateTwoClients_IDsAreDistinct` | PK auto-increment assigns unique IDs |
+| `CreateClient_WithMissingRequiredFields_Returns400` | Validation rejects invalid data with 400 |
+| `GetClient_NonExistentId_Returns404` | Missing records return 404, not 200 with null |
+| `CreateClient_ThenDelete_ThenRead_Returns404` | DELETE actually removes the record |
+| `CreateClient_ThenUpdate_ThenRead_ReturnsUpdatedValues` | PUT persists new values correctly |
 
 ---
 
-## 🗂️ Project Structure
+## Project Structure
 
 ```
 GLMS_Part2/
+├── docker-compose.yml           # Orchestrates all 3 containers
+├── Dockerfile.api               # Multi-stage build for GLMS.Api
+├── Dockerfile.web               # Multi-stage build for GLMS.Web
+├── .dockerignore                # Excludes obj/ bin/ to prevent NuGet path issues
 ├── GLMS.sln
-├── GLMS.Web/
-│   ├── Controllers/         # ClientsController, ContractsController, ServiceRequestsController
-│   ├── Data/                # ApplicationDbContext (EF Core)
-│   ├── Models/              # Client, Contract, ServiceRequest, Enums
+│
+├── GLMS.Api/                    # Web API — business logic + DB
+│   ├── Controllers/             # Thin controllers: receive, delegate, respond
+│   ├── Services/                # Business logic (IClientService, IContractService, etc.)
 │   ├── Patterns/
-│   │   ├── Factory/         # IContractFactory, Local, International, Resolver
-│   │   ├── Strategy/        # ICurrencyStrategy, UsdToZar, EurToZar, FinancialProcessor
-│   │   └── Observer/        # IStatusObserver, Subject, ServiceRequestObserver, FinanceObserver
-│   ├── Services/            # CurrencyService (API), FileValidationService (PDF)
-│   ├── Views/               # Razor .cshtml views for all entities
-│   ├── appsettings.json     # Connection string (not hardcoded)
-│   └── Program.cs           # DI registration, middleware, auto-migration
-└── GLMS.Tests/
-    ├── CurrencyCalculationTests.cs   # 9 unit tests
-    └── FileValidationTests.cs        # 11 unit tests
+│   │   ├── Factory/             # IContractFactory, Local, International, Resolver
+│   │   ├── Strategy/            # ICurrencyConversionStrategy, UsdToZarStrategy
+│   │   └── Observer/            # IStatusObserver, Subject, ServiceRequestObserver
+│   ├── Data/                    # ApplicationDbContext (EF Core)
+│   └── Program.cs               # DI, JWT, Swagger, EF Core setup
+│
+├── GLMS.Web/                    # MVC Frontend — presentation only
+│   ├── Controllers/             # Call ApiService — zero DB code
+│   ├── Services/
+│   │   └── ApiService.cs        # Typed HttpClient wrapping all API calls
+│   ├── Views/                   # Razor .cshtml views
+│   └── Program.cs               # HttpClient, Session — no DbContext
+│
+├── GLMS.Shared/                 # Shared models used by both API and Web
+│   └── Models/                  # Client, Contract, ServiceRequest, Enums
+│
+└── GLMS.Tests/                  # Integration tests
+    ├── ApiIntegrationTests.cs   # 13 routing/auth/response tests
+    ├── DataIntegrityTests.cs    # 8 create-then-read data integrity tests
+    ├── CurrencyCalculationTests.cs
+    └── FileValidationTests.cs
 ```
 
 ---
 
-## 🤖 AI Assistance Declaration
+## CI/CD — GitHub Actions
+
+Every push triggers the workflow in `.github/workflows/dotnet.yml`:
+
+1. Checkout code
+2. Install .NET 8 SDK
+3. Restore NuGet packages
+4. Build solution
+5. Run all tests — deployment is blocked if any test fails
+
+---
+
+## AI Assistance Declaration
 
 AI (Claude) was used **only for**:
 
@@ -177,11 +222,11 @@ AI (Claude) was used **only for**:
 - Debugging and error explanation
 - Helping structure documentation like this file
 
-**Where AI tools were used for guidance or explanation, this has been noted. All code was written, understood, and is owned by me, The code, documentation, and all artefacts in this submission were developed by me.**
+All code was written, understood, and is owned by me. The code, documentation, and all artefacts in this submission were developed by me.
 
 ---
 
-## 👤 Developer
+## Developer
 
 **Tayler Usmar | ST10445063**
-PROG7311 
+PROG7311 — Part 3

@@ -1,6 +1,6 @@
 # ============================================================
 # GitHub Actions CI Workflow — GLMS (Global Logistics Management System)
-# Student: Tayler Usmar | ST10445063 | PROG7311 POE Part 2
+# Student: Tayler Usmar | ST10445063 | PROG7311 POE Part 3
 #
 # WHAT THIS DOES:
 # Every time code is pushed to GitHub (or a Pull Request is opened),
@@ -8,12 +8,15 @@
 #   1. Sets up a .NET 8 build environment on GitHub's servers
 #   2. Restores all NuGet packages (like dotnet restore)
 #   3. Builds the entire solution
-#   4. Runs all 20 xUnit tests and reports pass/fail
+#   4. Runs all tests (unit + integration) and reports pass/fail
 #
-# WHY THIS MATTERS:
+# WHY THIS MATTERS (Technical Reflection — CI/CD):
 # This is Continuous Integration (CI) — a professional practice where
-# every code change is automatically verified. If a test breaks, GitHub
-# will show a red X on the commit so you know immediately.
+# every code change is automatically verified on a clean Linux server.
+# Integration tests run against an in-memory database so no SQL Server
+# is needed on the CI runner. If any test breaks, GitHub shows a red X
+# on the commit and deployment is blocked — this is the automated
+# safety net that prevents "breaking changes" from reaching production.
 # ============================================================
 
 name: Build and Test GLMS
